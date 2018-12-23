@@ -4,6 +4,7 @@ import requests
 import os
 import time
 import threading
+import atexit
 
 ffmpegPID = 0
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -40,7 +41,7 @@ def killStatic():
     global ffmpegPID
     """ Check For the existence of a unix pid. """
     try:
-        os.kill(ffmpegPID, 9)
+        os.kill(ffmpegPID.pid, 9)
     except OSError:
         return False
     else:
@@ -58,6 +59,8 @@ def check_pid(pid):
         print("Still Running")
         return True
 
+def exit_handler():
+    killStatic()
 
 def main():
     cameraUrl = sys.argv[1]
@@ -70,8 +73,10 @@ def main():
             thr.join()
         else:
             startStatic(streamkey)
-            while not checkStream(streamkey):
+            while not checkStream(cameraUrl):
+                print("Still Offline")
                 time.sleep(5)
             killStatic()
-            
+
+atexit.register(exit_handler)
 main()
